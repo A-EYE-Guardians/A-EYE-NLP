@@ -1,0 +1,6 @@
+<project version="4">
+  <component name="Black">
+    <option name="sdkName" value="Python 3.12 (streamlit_ai_mobility)" />
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (streamlit_ai_mobility)" project-jdk-type="Python SDK" />
+</project>
