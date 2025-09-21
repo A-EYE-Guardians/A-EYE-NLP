@@ -1,0 +1,55 @@
+cat > .gitignore <<'EOF'
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.cpython-*.pyc
+.ipynb_checkpoints/
+.mypy_cache/
+.pytest_cache/
+.venv/
+venv/
+env/
+.env
+*.env
+
+# Editors/IDE
+.vscode/
+.idea/
+
+# Builds / dists
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Node
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Data & artifacts
+data/
+dataset/
+datasets/
+uploads/
+media/
+outputs/
+runs/
+wandb/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+
+# Docker volumes (예시)
+docker-data/
+minio-data/
+EOF

@@ -1,0 +1,39 @@
+services:
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin12345
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web console
+    volumes:
+      - minio-data:/data
+
+  langgraph:
+    build: ../langgraph
+    environment:
+      - LG_TOKEN=LG_SECRET
+      - MAIN_TOKEN=MAIN_SECRET
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=admin12345
+      - MINIO_BUCKET=roi
+      - REDIS_URL=redis://redis:6379/0 # 추가
+      - SHARED_UPLOADS=/shared/uploads # 추가
+    depends_on:
+      - minio
+      - redis # 추가
+    ports:
+      - "9100:9000"
+    volumes:
+      - ../shared:/shared:rw # 추가
+
+volumes:
+  minio-data: # ★ 반드시 있어야 함
