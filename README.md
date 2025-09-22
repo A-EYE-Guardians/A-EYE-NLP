@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 이 레포지토리는 A-EYE 프로젝트 Langgraph를 이용한 NLP 처리 레포입니다.
 =======
 
@@ -190,4 +189,3 @@ docker run --rm -it --device /dev/snd --name aeye a-eye
 4. Docker 환경을 쓰면 팀원 간 버전/패키지 충돌을 막을 수 있음.
 
 ---
->>>>>>> original/june17thcom
