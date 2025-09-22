@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>Dual WebRTC Viewer</title>
+    <style>
+      body {
+        margin: 0;
+        background: #111827;
+        color: #e5e7eb;
+        font-family: sans-serif;
+      }
+      header {
+        padding: 12px 16px;
+        background: #0b0c10;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        height: calc(100vh - 56px);
+        padding: 8px;
+      }
+      video {
+        width: 100%;
+        height: 100%;
+        background: black;
+        object-fit: contain;
+      }
+      input,
+      button {
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid #374151;
+        background: #1f2937;
+        color: #e5e7eb;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>Path1: <input id="p1" value="pi1" /></div>
+      <div>Path2: <input id="p2" value="pi2" /></div>
+      <button id="conn">Connect (WebRTC)</button>
+      <button id="disc">Disconnect</button>
+    </header>
+    <main>
+      <video id="v1" autoplay playsinline muted></video>
+      <video id="v2" autoplay playsinline muted></video>
+    </main>
+
+    <script>
+      // (1) MediaMTX 서버 명시 (필요시 입력 UI로 바꿔도 됨)
+      const HOST = "192.168.162.36";
+      const PROTO = location.protocol === "https:" ? "https" : "http";
+
+      // (2) 올바른 WHEP URL 후보
+      const candidates = (path) => [
+        `${PROTO}://${HOST}:8889/${encodeURIComponent(path)}/whep`,
+        // 일부 버전은 슬래시 허용
+        `${PROTO}://${HOST}:8889/${encodeURIComponent(path)}/whep/`,
+      ];
+
+      async function whepPOST(urls, sdp) {
+        const headers = {
+          "Content-Type": "application/sdp",
+          Accept: "application/sdp",
+        };
+        let lastErr;
+        for (const u of urls) {
+          try {
+            const r = await fetch(u, { method: "POST", headers, body: sdp });
+            if (r.ok) return await r.text();
+            lastErr = new Error(`WHEP ${r.status} ${u}`);
+          } catch (e) {
+            lastErr = e;
+          }
+        }
+        throw lastErr ?? new Error("WHEP POST failed for all candidates");
+      }
+
+      let pcs = [];
+      async function start(videoEl, path) {
+        const pc = new RTCPeerConnection({ iceServers: [] });
+        pcs.push(pc);
+        const tr = pc.addTransceiver("video", { direction: "recvonly" });
+
+        // H264 우선 (packetization-mode=1)
+        const caps = RTCRtpReceiver.getCapabilities("video");
+        const h264 = caps.codecs.filter(
+          (c) =>
+            c.mimeType.toLowerCase() === "video/h264" &&
+            /packetization-mode=1/.test(c.sdpFmtpLine || "")
+        );
+        if (h264.length && tr.setCodecPreferences) tr.setCodecPreferences(h264);
+
+        pc.ontrack = (e) => (videoEl.srcObject = e.streams[0]);
+
+        const offer = await pc.createOffer({ offerToReceiveVideo: true });
+        await pc.setLocalDescription(offer);
+
+        const answer = await whepPOST(candidates(path), offer.sdp);
+        await pc.setRemoteDescription({ type: "answer", sdp: answer });
+      }
+
+      function stopAll() {
+        pcs.forEach((pc) => pc.close());
+        pcs = [];
+      }
+
+      document.getElementById("conn").onclick = async () => {
+        stopAll();
+        try {
+          await Promise.all([
+            start(
+              document.getElementById("v1"),
+              document.getElementById("p1").value.trim()
+            ),
+            start(
+              document.getElementById("v2"),
+              document.getElementById("p2").value.trim()
+            ),
+          ]);
+        } catch (e) {
+          console.error(e);
+          alert(e.message);
+        }
+      };
+      document.getElementById("disc").onclick = stopAll;
+    </script>
+  </body>
+</html>
