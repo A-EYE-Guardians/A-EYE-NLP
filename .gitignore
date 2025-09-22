@@ -1,0 +1,8 @@
+./venv.env
+.venv/
+__pycache__/
+*.pyc
+*.zip
+minio-data/
+.DS_Store
+node_modules/
